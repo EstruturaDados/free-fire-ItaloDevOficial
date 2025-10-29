@@ -1,12 +1,11 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 
-#define MAX_ITENS 10 // Capacidade máxima da mochila
+#define MAX_ITENS 10
 
 // ----------------------
-// Definição da Struct
+// Struct
 // ----------------------
 typedef struct {
     char nome[30];
@@ -15,12 +14,13 @@ typedef struct {
 } Item;
 
 // ----------------------
-// Funções do sistema
+// Protótipos
 // ----------------------
-void inserirItem(Item mochila[], int *qtd);
+void adicionarItem(Item mochila[], int *qtd);
 void removerItem(Item mochila[], int *qtd);
 void listarItens(Item mochila[], int qtd);
-void buscarItem(Item mochila[], int qtd);
+int buscarItem(Item mochila[], int qtd, char *nome, int *comparacoes);
+void printCabecalho();
 
 // ----------------------
 // Função principal
@@ -29,23 +29,23 @@ int main() {
     Item mochila[MAX_ITENS];
     int qtd = 0;
     int opcao;
-
-    printf("=== SISTEMA DE INVENTÁRIO ===\n");
-    listarItens(mochila, qtd); // Mostra estado inicial da mochila
+    char nomeBusca[30];
+    int comparacoes;
 
     do {
-        printf("\n1 - Inserir item\n");
+        printCabecalho();
+        printf("1 - Adicionar item\n");
         printf("2 - Remover item\n");
         printf("3 - Listar itens\n");
-        printf("4 - Buscar item\n");
+        printf("4 - Buscar item por nome\n");
         printf("0 - Sair\n");
         printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        getchar(); // limpar buffer do Enter
+        getchar(); // limpar buffer
 
-        switch (opcao) {
+        switch(opcao) {
             case 1:
-                inserirItem(mochila, &qtd);
+                adicionarItem(mochila, &qtd);
                 break;
             case 2:
                 removerItem(mochila, &qtd);
@@ -54,122 +54,109 @@ int main() {
                 listarItens(mochila, qtd);
                 break;
             case 4:
-                buscarItem(mochila, qtd);
+                printf("Digite o nome do item: ");
+                fgets(nomeBusca, sizeof(nomeBusca), stdin);
+                nomeBusca[strcspn(nomeBusca, "\n")] = '\0';
+                comparacoes = 0;
+                if (buscarItem(mochila, qtd, nomeBusca, &comparacoes) == -1)
+                    printf("\n[!] Item não encontrado. Comparações realizadas: %d\n", comparacoes);
                 break;
             case 0:
                 printf("\nEncerrando o sistema...\n");
                 break;
             default:
-                printf("\nOpção inválida! Tente novamente.\n");
+                printf("\n[!] Opção inválida! Tente novamente.\n");
         }
-    } while (opcao != 0);
+        printf("\n");
+    } while(opcao != 0);
 
     return 0;
 }
 
 // ----------------------
-// Inserir novo item
+// Funções
 // ----------------------
-void inserirItem(Item mochila[], int *qtd) {
+void printCabecalho() {
+    printf("\n====================================\n");
+    printf("       SISTEMA DE INVENTÁRIO        \n");
+    printf("====================================\n");
+}
+
+void adicionarItem(Item mochila[], int *qtd) {
     if (*qtd >= MAX_ITENS) {
-        printf("\nA mochila está cheia! Não é possível adicionar mais itens.\n");
+        printf("\n[!] Mochila cheia! Não é possível adicionar mais itens.\n");
         return;
     }
 
     Item novo;
-    printf("\nDigite o nome do item: ");
+    printf("\nNome do item: ");
     fgets(novo.nome, sizeof(novo.nome), stdin);
-    novo.nome[strcspn(novo.nome, "\n")] = '\0'; // remove '\n'
+    novo.nome[strcspn(novo.nome, "\n")] = '\0';
 
-    printf("Digite o tipo do item (arma, munição, cura, etc): ");
+    printf("Tipo do item: ");
     fgets(novo.tipo, sizeof(novo.tipo), stdin);
     novo.tipo[strcspn(novo.tipo, "\n")] = '\0';
 
-    printf("Digite a quantidade: ");
+    printf("Quantidade: ");
     scanf("%d", &novo.quantidade);
     getchar(); // limpar buffer
 
     mochila[*qtd] = novo;
     (*qtd)++;
 
-    printf("\n✅ Item adicionado com sucesso!\n");
-    listarItens(mochila, *qtd); // Mostra mochila atualizada
+    printf("\n[✔] Item adicionado com sucesso!\n");
 }
 
-// ----------------------
-// Remover item
-// ----------------------
 void removerItem(Item mochila[], int *qtd) {
     if (*qtd == 0) {
-        printf("\nA mochila está vazia! Nada para remover.\n");
+        printf("\n[!] Mochila vazia!\n");
         return;
     }
 
-    char nomeRemover[30];
-    printf("\nDigite o nome do item a ser removido: ");
-    fgets(nomeRemover, sizeof(nomeRemover), stdin);
-    nomeRemover[strcspn(nomeRemover, "\n")] = '\0';
+    char nome[30];
+    printf("\nNome do item a remover: ");
+    fgets(nome, sizeof(nome), stdin);
+    nome[strcspn(nome, "\n")] = '\0';
 
     int encontrado = 0;
-    for (int i = 0; i < *qtd; i++) {
-        if (strcmp(mochila[i].nome, nomeRemover) == 0) {
-            for (int j = i; j < *qtd - 1; j++) {
-                mochila[j] = mochila[j + 1]; // move os próximos itens
-            }
+    for(int i = 0; i < *qtd; i++) {
+        if(strcmp(mochila[i].nome, nome) == 0) {
+            for(int j = i; j < *qtd - 1; j++)
+                mochila[j] = mochila[j + 1];
             (*qtd)--;
             encontrado = 1;
-            printf("\n❌ Item '%s' removido com sucesso!\n", nomeRemover);
+            printf("\n[✔] Item '%s' removido com sucesso!\n", nome);
             break;
         }
     }
 
-    if (!encontrado)
-        printf("\nItem não encontrado!\n");
-
-    listarItens(mochila, *qtd); // Mostra mochila atualizada
+    if(!encontrado)
+        printf("\n[!] Item não encontrado!\n");
 }
 
-// ----------------------
-// Listar todos os itens
-// ----------------------
 void listarItens(Item mochila[], int qtd) {
-    if (qtd == 0) {
-        printf("\n📦 A mochila está vazia.\n");
+    if(qtd == 0) {
+        printf("\n[!] Mochila vazia!\n");
         return;
     }
 
-    printf("\n=== ITENS NA MOCHILA ===\n");
-    for (int i = 0; i < qtd; i++) {
-        printf("%d. Nome: %s | Tipo: %s | Quantidade: %d\n",
-               i + 1, mochila[i].nome, mochila[i].tipo, mochila[i].quantidade);
-    }
+    printf("\n================ ITENS NA MOCHILA ================\n");
+    printf("| %-3s | %-20s | %-15s | %-10s |\n", "Nº", "NOME", "TIPO", "QUANTIDADE");
+    printf("---------------------------------------------------------------\n");
+    for(int i = 0; i < qtd; i++)
+        printf("| %-3d | %-20s | %-15s | %-10d |\n", i + 1, mochila[i].nome, mochila[i].tipo, mochila[i].quantidade);
+    printf("---------------------------------------------------------------\n");
 }
 
-// ----------------------
-// Buscar item pelo nome
-// ----------------------
-void buscarItem(Item mochila[], int qtd) {
-    if (qtd == 0) {
-        printf("\nA mochila está vazia! Nenhum item para buscar.\n");
-        return;
-    }
-
-    char nomeBusca[30];
-    printf("\nDigite o nome do item a ser buscado: ");
-    fgets(nomeBusca, sizeof(nomeBusca), stdin);
-    nomeBusca[strcspn(nomeBusca, "\n")] = '\0';
-
-    int encontrado = 0;
-    for (int i = 0; i < qtd; i++) {
-        if (strcmp(mochila[i].nome, nomeBusca) == 0) {
-            printf("\n🔎 Item encontrado!\n");
-            printf("Nome: %s\nTipo: %s\nQuantidade: %d\n",
-                   mochila[i].nome, mochila[i].tipo, mochila[i].quantidade);
-            encontrado = 1;
-            break;
+int buscarItem(Item mochila[], int qtd, char *nome, int *comparacoes) {
+    for(int i = 0; i < qtd; i++) {
+        (*comparacoes)++;
+        if(strcmp(mochila[i].nome, nome) == 0) {
+            printf("\n[✔] Item encontrado:\n");
+            printf("Nome: %s\nTipo: %s\nQuantidade: %d\n", mochila[i].nome, mochila[i].tipo, mochila[i].quantidade);
+            printf("Comparações realizadas: %d\n", *comparacoes);
+            return i;
         }
     }
-
-    if (!encontrado)
-        printf("\nItem não encontrado!\n");
+    return -1;
 }
